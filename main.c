@@ -35,18 +35,22 @@ int init()
         if (cmd == NULL) {
             printf("too large command size\n");
             printf("be carefull it may cause undefined behaviour\n");
+            /* fflush(stdin);*/
             continue;
         }
         int i;
         for (i = 0; i < commands_amount; ++i) {
             if (strcmp(commands[i].name, cmd[0]) == 0) {
                 int ret = commands[i].command(words_amount, cmd);
-                printf("exit code=%d\n", ret);
+                if (ret != 0) {
+                    printf("Sorry, I can't do this :(\n");
+                    printf("%d ", ret);
+                }
             }
         }
-        for (i = 0; i < words_amount; ++i) {
+        /*for (i = 0; i < words_amount; ++i) {
             printf("'%s'\n", cmd[i]);
-        }
+        }*/
         for (i = 0; i < words_amount; ++i) {
             free(cmd[i]);
         }
