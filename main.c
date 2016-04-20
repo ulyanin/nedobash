@@ -39,6 +39,8 @@ int init()
             continue;
         }
         int i;
+        for (i = 0; i  < words_amount; ++i)
+            printf("'%s'\n", cmd[i]);
         for (i = 0; i < commands_amount; ++i) {
             if (strcmp(commands[i].name, cmd[0]) == 0) {
                 int ret = commands[i].command(words_amount, cmd);

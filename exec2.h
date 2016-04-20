@@ -29,7 +29,6 @@ void redirect_stream(char * fname, int stream)
     int fdesk = open(fname, flags, mode);
     close(stream);
     dup2(fdesk, stream);
-    /*close(fdesk);*/
 }
 
 int pipes_amount(char ** argv, int argc)
@@ -50,27 +49,18 @@ void find_pipes(char ** argv, int argc, int * pipe_begins) {
     }
 }
 
-/*void stream_processing(argv, argc) {
-
-}*/
 
 int exec_function(int argc, char ** argv)
 {
     int i = 0;
-    /*for (i = 0; i < argc; ++i) {
-        printf("%s ", argv[i]);
+    for (i = 0; i < argc; ++i) {
+        printf("'%s'\n", argv[i]);
     }
-    printf("-- exec_func\n");*/
-    /*printf("forked\n");*/
-    /*int parts = pipes_amount(argv, argc) + 1;
-    int * pipe_begins = (int *)malloc(sizeof(int) * (parts));
-    find_pipes(argv, argc, pipe_begins);
-    int pipe_;
-    for (pipe_ = 0; pipe_ < parts; ++pipe_) {*/
     int last = 1;
-    int pipes_num = pipes_amount(argv, argc) + 1;
+    int pipes_num = pipes_amount(argv, argc);
     int pipe_descs[pipes_num][2];
-    pipe_descs[0][0] = 0; pipe_descs[0][1] = 1;
+    int processes_id[pipes_num];
+    int proc_id_pos = 0;
     int current_pipe = 0;
     int status;
     int p = 1; /* 0 if we are child process */
@@ -80,49 +70,41 @@ int exec_function(int argc, char ** argv)
             if (p == 0) {
                 if (i != argc - 1)
                     argv[i] = (char *)0;
-                fprintf(stderr, "\tstarting %s\n", argv[last]);
+                /*fprintf(stderr, "\tstarting %s\n", argv[last]);*/
+                int j; /* we must close all open pipes to write */
+                for (j = 0; j <= current_pipe - 2; ++j) {
+                    /*fprintf(stderr, "\tclosing %d in child\n", pipe_descs[j][1]);*/
+                    close(pipe_descs[j][1]);
+                }
                 status = execvp(argv[last], argv + last);
-                fprintf(stderr, "\tend of %s\n", argv[last]);
-                close(1);
-                close(0);
-                exit(status);
+                exit(status); /* if cannot exec */
             }
         }
         if (strcmp(argv[i], "|") == 0 || i == 0) {
             if (p > 0) {
-                ++current_pipe;
                 if (current_pipe < pipes_num) {
-                    printf("pipe\n");
                     status = pipe(pipe_descs[current_pipe]);
+                    /*printf("\tcreating pipe (%d, %d) in %d\n", pipe_descs[current_pipe][0], pipe_descs[current_pipe][1], p);*/
                     if (status == -1) {
                         fprintf(stderr, "cannot create a pipe\n");
                     }
                 }
+                ++current_pipe;
                 p = fork();
                 if (p == 0) {
-                    printf("forked\n");
-                    if (current_pipe < pipes_num) {
-                        printf("copying %d to %d\n",pipe_descs[current_pipe][1], 1);
+                    /*printf("forked\n");*/
+                    if (current_pipe - 1 < pipes_num) {
+                        /*printf("copying %d to %d\n",pipe_descs[current_pipe - 1][1], 1);*/
                         close(1);
-                        dup2(pipe_descs[current_pipe][1], 1);
+                        dup2(pipe_descs[current_pipe - 1][1], 1);
                     }
-                    if (current_pipe != 1) {
+                    if (current_pipe > 1) {
                         close(0);
-                        printf("copying %d to %d\n",pipe_descs[current_pipe - 1][0], 0);
-                        dup2(pipe_descs[current_pipe - 1][0], 0);
+                        /*printf("copying %d to %d\n",pipe_descs[current_pipe - 2][0], 0);*/
+                        dup2(pipe_descs[current_pipe - 2][0], 0);
                     }
                 } else if (p > 0) {
-                    printf("\twaiting for %d\n", p);
-                    waitpid(p, &status, 0);
-                    if (current_pipe < pipes_num) {
-                        fprintf(stderr, "closing %d\n", pipe_descs[current_pipe][1]);
-                        close(pipe_descs[current_pipe][1]);
-                    }
-                    if (current_pipe != 1) {
-                        fprintf(stderr, "closing %d\n", pipe_descs[current_pipe - 1][0]);
-                        close(pipe_descs[current_pipe - 1][0]);
-                    }
-                    printf("\tsuccess\n");
+                    processes_id[proc_id_pos++] = p;
                 }
             }
             last = i + 1;
@@ -138,17 +120,24 @@ int exec_function(int argc, char ** argv)
                 if (stream < 0 || stream > 2 || i == argc - 1)
                     continue;
                 argv[i] = (char *)0;
-                /*fprintf(stdout, "redirectinc stream\n");*/
+                /*printf("redirect_stream %d to %s\n", stream, argv[i + 1]);*/
                 redirect_stream(argv[i + 1], stream);
-                /*fprinf(stdout, "completed\n");*/
             }
         }
     }
-    /*}
-    printf("exit_code=%d\n", ret);
-    if (ret != 0) {
-        exit(ret);
+    for (i = 0; i < proc_id_pos; ++i) {
+        /*fprintf(stderr, "\twaiting for %d\n", processes_id[i]);*/
+        waitpid(processes_id[i], &status, 0);
+        /*fprintf(stderr, "\t%d is terminated\n", processes_id[i]);*/
+        if (i < pipes_num) {
+            /*fprintf(stderr, "\tclosing %d\n", pipe_descs[i][1]);*/
+            close(pipe_descs[i][1]);
+        }
+        if (i != 0) {
+            /*fprintf(stderr, "\tclosing %d\n", pipe_descs[i - 1][0]);*/
+            close(pipe_descs[i - 1][0]);
+        }
+        /*fprintf(stderr, "\tend waiting %d\n", processes_id[i]);*/
     }
-    return ret;*/
     return status;
 }
