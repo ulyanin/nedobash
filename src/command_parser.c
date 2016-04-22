@@ -1,8 +1,4 @@
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-
+#include "command_parser.h"
 
 int num_words(char * str)
 {
@@ -56,4 +52,5 @@ char ** readCommand(int * words_amount, int num)
     free(buffer);
     return words;
 }
+
 

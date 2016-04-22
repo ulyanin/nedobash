@@ -1,12 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <string.h>
+#include "exec.h"
 
 int is_gl_than_sign(char c)
 {
@@ -53,9 +45,6 @@ void find_pipes(char ** argv, int argc, int * pipe_begins) {
 int exec_function(int argc, char ** argv)
 {
     int i = 0;
-    for (i = 0; i < argc; ++i) {
-        printf("'%s'\n", argv[i]);
-    }
     int last = 1;
     int pipes_num = pipes_amount(argv, argc);
     int pipe_descs[pipes_num][2];
@@ -141,3 +130,5 @@ int exec_function(int argc, char ** argv)
     }
     return status;
 }
+
+

@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <unistd.h>
-#include "command_parser.h"
-#include "command_description.h"
-#include "exec2.h"
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "plugin_load.h"
+#include "command_parser.h"
+#include "command_adder.h"
+#include "command_description.h"
+#include "exec.h"
+#include "help.h"
 
 const int MAX_CMD_SIZE = 1000;
 
@@ -18,7 +21,11 @@ int commands_amount = 0;
 void add_base_commands()
 {
     struct Command exec_cmd = {"exec", exec_function};
-    commands = add_command(commands, &commands_amount, exec_cmd);
+    add_command(exec_cmd);
+    struct Command load_cmd = {"load_plugin", plugin_load};
+    add_command(load_cmd);
+    struct Command help_cmd = {"help", help_function};
+    add_command(help_cmd);
 }
 
 int init()
@@ -39,8 +46,6 @@ int init()
             continue;
         }
         int i;
-        for (i = 0; i  < words_amount; ++i)
-            printf("'%s'\n", cmd[i]);
         for (i = 0; i < commands_amount; ++i) {
             if (strcmp(commands[i].name, cmd[0]) == 0) {
                 int ret = commands[i].command(words_amount, cmd);
